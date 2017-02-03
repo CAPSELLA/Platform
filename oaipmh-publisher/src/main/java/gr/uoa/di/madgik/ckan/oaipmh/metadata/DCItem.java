@@ -190,7 +190,7 @@ public class DCItem extends Metadata {
             }
             createDCElement(rootElement, "description", description, xmlDocument);
             createDCElement(rootElement, "publisher", publisher, xmlDocument);
-            createDCElement(rootElement, "dontributor", contributor, xmlDocument);
+            createDCElement(rootElement, "contributor", contributor, xmlDocument);
             createDCElement(rootElement, "date", date, xmlDocument);
             createDCElement(rootElement, "type", type, xmlDocument);
 
