@@ -1,6 +1,6 @@
 
-This software is licensed under: CC BY 3.0 license
-https://creativecommons.org/licenses/by/3.0/
+This software is licensed under: EUPL v1.1 license
+https://joinup.ec.europa.eu/community/eupl/og_page/european-union-public-licence-eupl-v11
 
 
 CAPSELLA project (http://www.capsella.eu)
