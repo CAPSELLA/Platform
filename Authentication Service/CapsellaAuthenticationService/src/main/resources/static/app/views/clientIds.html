@@ -1,0 +1,54 @@
+
+
+
+<div class="row">
+
+	<div class="col-sm-12">
+		<div class="panel panel-default" >
+			<div class="panel-heading">
+				Generated Tokens
+				
+			</div>
+			<div class="panel-body" >
+
+				<div class="alert alert-info margin-top-5" ng-show="deleteMessage">{{deleteMessage}}</div>
+				<div class="table-responsive">
+				
+				<table class="table table-bordered"  cellpadding="10" cellpadding="10"	cellpadding="10" cellpadding="10" cellpadding="10" cellpadding="10" >
+				
+					<thead  >
+					  
+					
+						<tr>
+							<th >#</th>
+							<th >Name</th>
+							<th >Host name</th>
+							<th >Groups</th>
+							<th >Token</th>
+							<th>Expiration Date</th>
+							<th> </th>
+						</tr>
+					</thead>
+					<tbody  >
+						<tr ng-repeat="clientId in clientIds">
+							<td >{{$index+1}}</td>
+							<td >{{clientId.name}}</td>
+							<td >{{clientId.hostname}}</td>
+							<td>{{clientId.groups}}</td>
+							<td class="col-md-2" >{{clientId.token}}</td>
+							<td>{{clientId.expiration_date}}</td>
+							<td><button type="button" class="btn btn-default btn-sm"
+									ng-click="deleteClientId(clientId.token)">
+									<span class="glyphicon glyphicon-edit"></span>
+								</button></td>
+							
+						</tr>
+					</tbody>
+				</table>
+			</div>
+			</div>
+		</div>
+	</div>
+	
+	
+</div>
