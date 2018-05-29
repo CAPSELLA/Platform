@@ -43,7 +43,7 @@ public class Utils {
 
         HttpPost post = new HttpPost("https://publicfood.eu/limesurvey/index.php/admin/remotecontrol");
         post.setHeader("Content-type", "application/json");
-        post.setEntity( new StringEntity("{\"method\": \"get_session_key\", \"params\": [\"admin\", \"password\" ], \"id\": 1}"));
+        post.setEntity( new StringEntity("{\"method\": \"get_session_key\", \"params\": [\"****\", \"*****\" ], \"id\": 1}"));
         try {
             HttpResponse response = client.execute(post);
             if(response.getStatusLine().getStatusCode() == 200){
@@ -119,7 +119,7 @@ public class Utils {
 
         HttpPost post = new HttpPost("https://publicfood.eu/limesurvey/index.php/admin/remotecontrol");
         post.setHeader("Content-type", "application/json");
-        post.setEntity( new StringEntity("{\"method\": \"get_session_key\", \"params\": [\"admin\", \"password\" ], \"id\": 1}"));
+        post.setEntity( new StringEntity("{\"method\": \"get_session_key\", \"params\": [\"*****\", \"*****\" ], \"id\": 1}"));
         try {
             HttpResponse response = client.execute(post);
             if(response.getStatusLine().getStatusCode() == 200){
