@@ -1,5 +1,6 @@
 package gr.uoa.di.madgik.service;
 
+import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.text.DateFormat;
@@ -45,10 +46,10 @@ public class UserRegistrationService {
 	}
 
 	public void insertUser(User user, List<String> roles) {
-		String sql = "INSERT INTO users(username, password,fullname,\"group\") VALUES (?,?,?,string_to_array(?,','))";
+		String sql = "INSERT INTO users(username, password,fullname,\"group\", email) VALUES (?,?,?,string_to_array(?,','), ?)";
 		String commaSeparatedString = String.join(",", roles);
 		jdbcTemplate.update(sql,
-				new Object[] { user.getUsername(), user.getUserPassword(), user.getFullName(), commaSeparatedString });
+				new Object[] { user.getUsername(), user.getUserPassword(), user.getFullName(), commaSeparatedString, user.getEmail() });
 
 	}
 	
@@ -206,8 +207,10 @@ public class UserRegistrationService {
 			user.setUserPassword((String) row.get("password"));
 			user.setFullName((String) row.get("fullname"));
 			user.setLastName((String) row.get("fullname"));
+			user.setEmail((String) row.get("email"));
+
 			user.setUserPassword((String) row.get("password"));
-			user.setHomeDirectory(homeDirectory);
+			user.setHomeDirectory(homeDirectory + "/" + (String) row.get("username"));
 			user.setGidNumber(gidNumber);
 			PgArray groupsArray = (PgArray) row.get("group");
 			String[] str_groups;
@@ -252,6 +255,7 @@ public class UserRegistrationService {
 			}
 
 			fullUser = user;
+			fullUser.setHomeDirectory(homeDirectory + "/" + fullUser.getUsername()); 
 		}
 
 		return fullUser;

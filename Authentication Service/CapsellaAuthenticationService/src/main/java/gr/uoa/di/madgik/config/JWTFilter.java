@@ -63,8 +63,8 @@ public class JWTFilter extends GenericFilterBean {
 				{
 			        System.out.println("Hostname:::::: " + clientIds.get(0).getHostname());
 
-					if(!clientIds.get(0).getHostname().equals(ipAddress))
-						((HttpServletResponse) res).sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unacceptable IP address.");
+//					if(!clientIds.get(0).getHostname().equals(ipAddress))
+//						((HttpServletResponse) res).sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unacceptable IP address.");
 				}
 				
 				Claims claims = Jwts.parser().setSigningKey(secretKey).parseClaimsJws(token).getBody();

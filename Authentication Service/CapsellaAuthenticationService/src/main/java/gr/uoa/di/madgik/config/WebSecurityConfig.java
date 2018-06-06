@@ -36,7 +36,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 		web.ignoring()
 				// ignoring the "/", "/index.html", "/app/**", "/register",
 				// "/favicon.ico"
-				.antMatchers("/", "/index.html", "/app/**", "/register", "/getUserClientIds", "/authenticate","/getGroups","/swagger-ui.html", "/webjars/springfox-swagger-ui/css/typography.css",
+				.antMatchers("/", "/index.html","/changePassword", "/app/**", "/register", "/getUserClientIds", "/authenticate","/getGroups", "/admin/user","/admin/users","/swagger-ui.html", "/webjars/springfox-swagger-ui/css/typography.css",
 						"/webjars/springfox-swagger-ui/css/reset.css","/webjars/springfox-swagger-ui/css/screen.css", 
 						"/webjars/springfox-swagger-ui/lib/object-assign-pollyfill.js", "/webjars/springfox-swagger-ui/lib/jquery-1.8.0.min.js",
 						"/webjars/springfox-swagger-ui/lib/jquery.slideto.min.js", "/webjars/springfox-swagger-ui/lib/jquery.wiggle.min.js",

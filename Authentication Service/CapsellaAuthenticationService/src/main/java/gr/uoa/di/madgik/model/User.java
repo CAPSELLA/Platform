@@ -22,7 +22,7 @@ import gr.uoa.di.madgik.repo.GroupRepo;
 import gr.uoa.di.madgik.repo.GroupRepoImpl;
 import gr.uoa.di.madgik.service.GroupService;
 
-@Entry(objectClasses = { "posixAccount", "top", "inetOrgPerson" }, base = "ou=users")
+@Entry(objectClasses = {  "inetOrgPerson", "posixAccount", "top" }, base = "ou=users,ou=capsella")
 public final class User implements Serializable {
 	/**
 	 * 
@@ -32,19 +32,24 @@ public final class User implements Serializable {
 	@JsonIgnore
 	@Id
 	private Name id;
+	
+	@Attribute(name = "cn")
+    @DnAttribute(value = "cn", index = 1)
+    private String name;
+
 
 	@Attribute(name = "uid")
-	@DnAttribute(value = "uid", index = 1)
+//	@DnAttribute(value = "uid", index=1)
 	private String username;
 
 	@Attribute(name = "cn")
 	private String fullName;
 
-	@Attribute(name = "displayName")
-	private String displayName;
+//	@Attribute(name = "displayName")
+//	private String displayName;
 
-	@Attribute(name = "givenName")
-	private String firstName;
+//	@Attribute(name = "givenName")
+//	private String firstName;
 
 	@Attribute(name = "sn")
 	private String lastName;
@@ -57,6 +62,9 @@ public final class User implements Serializable {
 
 	@Attribute(name = "homeDirectory")
 	private String homeDirectory;
+	
+	@Attribute(name = "mail")
+	private String email;
 
 	@Attribute(name = "userPassword")
 	private String userPassword;
@@ -72,6 +80,33 @@ public final class User implements Serializable {
 	}
 	
 	
+	
+
+	public String getEmail() {
+		return email;
+	}
+
+
+
+
+	public void setEmail(String email) {
+		this.email = email;
+	}
+
+
+
+
+	public String getName() {
+		return name;
+	}
+
+
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+
 
 	public String getNewPassword() {
 		return newPassword;
@@ -104,13 +139,13 @@ public final class User implements Serializable {
 		this.userPassword = userPassword;
 	}
 
-	public String getDisplayName() {
-		return displayName;
-	}
-
-	public void setDisplayName(String displayName) {
-		this.displayName = displayName;
-	}
+//	public String getDisplayName() {
+//		return displayName;
+//	}
+//
+//	public void setDisplayName(String displayName) {
+//		this.displayName = displayName;
+//	}
 
 	public String getUsername() {
 		return username;
@@ -156,13 +191,13 @@ public final class User implements Serializable {
 		this.id = LdapUtils.newLdapName(id);
 	}
 
-	public String getFirstName() {
-		return firstName;
-	}
-
-	public void setFirstName(String firstName) {
-		this.firstName = firstName;
-	}
+//	public String getFirstName() {
+//		return firstName;
+//	}
+//
+//	public void setFirstName(String firstName) {
+//		this.firstName = firstName;
+//	}
 
 	public String getFullName() {
 		return fullName;
@@ -223,28 +258,28 @@ public final class User implements Serializable {
 	@Autowired
 	public void getRoles(GroupRepo groupRepo, GroupRepoImpl groupRepoImpl, GroupService groupService) {
 
-		List<String> roles = new ArrayList<String>();
+		//List<String> roles = new ArrayList<String>();
 
-		List<String> groupNames = groupRepoImpl.getUserGroups(this);
-		for(String group : groupNames)
-		{
-//			if(groupRepoImpl.isMemberInGroup(GroupRepo.ADMIN_GROUP_STRING, this));
-//			{
-				Group g = groupService.getGroup(group);
-				
-				for(String right : g.getRoles())
-				{
-					if((Roles.ADMIN.name()).equals(right))
-						roles.add(Roles.ADMIN.name());
-					else if ((Roles.READ.name()).equals(right))
-						roles.add(Roles.READ.name());
-					else if((Roles.WRITE.name()).equals(right))
-						roles.add(Roles.WRITE.name());
-					
-				}
-//			}
-			
-		}
+		List<String> roles = groupRepoImpl.getUserGroups(this);
+//		for(String group : groupNames)
+//		{
+////			if(groupRepoImpl.isMemberInGroup(GroupRepo.ADMIN_GROUP_STRING, this));
+////			{
+//				Group g = groupService.getGroup(group);
+//				
+//				for(String right : g.getRoles())
+//				{
+//					if((Roles.ADMIN.name()).equals(right))
+//						roles.add(Roles.ADMIN.name());
+//					else if ((Roles.READ.name()).equals(right))
+//						roles.add(Roles.READ.name());
+//					else if((Roles.WRITE.name()).equals(right))
+//						roles.add(Roles.WRITE.name());
+//					
+//				}
+////			}
+//			
+//		}
 		
 		Set<String> hs = new HashSet<>();
 		hs.addAll(roles);

@@ -15,7 +15,7 @@ import java.util.List;
 public class Token {
 	
 	private static long ttlMillis = 60000 * 60 * 24 * 10;
-	private static long ttlMillisClientId = 60000 * 60 * 24 * 30 * 12 * 2;
+	private static long ttlMillisClientId = 1000 * 60  *24 * 345 * 2 ;
 
 	private static String secretKey = "&^%ERTYUIJO&^%FTGYHUJ";
 
@@ -78,7 +78,8 @@ public class Token {
 		    //if it has been specified, let's add the expiration
 		    if (ttlMillisClientId >= 0) {
 		    long expMillis = nowMillis + ttlMillisClientId;
-		        Date exp = new Date(expMillis);
+		        Date exp = new Date();
+		        exp.setYear(exp.getYear() + 5);
 		        values.add(exp);
 		        builder.setExpiration(exp);
 		    }

@@ -23,6 +23,9 @@ public interface GroupRepo extends LdapRepository<Group>, GroupRepoExtension {
 	public static final String USER = "USER";
 
 	Group findByName(String groupName);
+	
+	Group findByFullName(String fullName);
+
 
 	@Query("(member={0})")
 	Collection<Group> findByMember(Name member);

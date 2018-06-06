@@ -1,5 +1,7 @@
 package gr.uoa.di.madgik.service;
 
+import java.io.UnsupportedEncodingException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -27,6 +29,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import gr.uoa.di.madgik.config.Hash;
 import gr.uoa.di.madgik.model.Group;
 import gr.uoa.di.madgik.model.User;
 import gr.uoa.di.madgik.repo.GroupRepo;
@@ -69,8 +72,12 @@ public class UserService implements BaseLdapNameAware {
 	}
 
 	public Group getUserGroup(String group) {
-		String user_group = "cn=" + group + ",ou=groups";
-		return groupRepo.findOne(LdapUtils.newLdapName(user_group));
+	//	String user_group = "cn=" + group + ",ou=capsella";
+		Group g = groupRepo.findByFullName(group);
+		
+		return g;
+
+	//	return groupRepo.findOne(LdapUtils.newLdapName(user_group));
 	}
 
 	public Group getAdminGroup() {
@@ -111,19 +118,21 @@ public class UserService implements BaseLdapNameAware {
 	public User createUser(User user) {
 		List<String> groups = user.getGroups();
 		user.setGroups(null);
+		user.setName(user.getUsername());
 		Group userGroup = null;
 		userGroup = getUserGroup();
+	
 		User savedUser = userRepo.save(user);
-		if (userGroup != null) {
-			userGroup.addMember(toAbsoluteDn(savedUser.getId()));
-			groupRepo.save(userGroup);
-		}
+//		if (userGroup != null) {
+//		//	userGroup.addMember(toAbsoluteDn(savedUser.getId()));
+//			groupRepo.save(userGroup);
+//		}
 
 		if (groups.size() > 0) {
 			for (String group : groups) {
 
-				userGroup = getUserGroup(group);
-				userGroup.addMember(toAbsoluteDn(savedUser.getId()));
+				userGroup = groupRepo.findByName(group);
+				userGroup.addMember(savedUser.getUsername());
 				groupRepo.save(userGroup);
 			}
 		}
@@ -155,6 +164,10 @@ public class UserService implements BaseLdapNameAware {
 
 
 	public LdapName toAbsoluteDn(Name relativeName) {
+		return LdapNameBuilder.newInstance(basePath).add(relativeName).build();
+	}
+	
+	public LdapName toAbsoluteDn(String relativeName) {
 		return LdapNameBuilder.newInstance(basePath).add(relativeName).build();
 	}
 
@@ -190,8 +203,18 @@ public class UserService implements BaseLdapNameAware {
 			user.setNewUsername(null);
 
 		if (user.getNewPassword() != null && !user.getNewPassword().isEmpty()) {
-			String generatedSecuredPasswordHash = BCrypt.hashpw(user.getNewPassword(), BCrypt.gensalt(12));
-			user.setUserPassword(generatedSecuredPasswordHash);
+			String generatedSecuredPasswordHash;
+			try {
+				generatedSecuredPasswordHash = Hash.hashMD5Password(user.getNewPassword());
+				user.setUserPassword(generatedSecuredPasswordHash);
+
+			} catch (NoSuchAlgorithmException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (UnsupportedEncodingException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 			user.setNewPassword(null);
 		} else
 			user.setUserPassword(user.getUserPasswordASCII());
@@ -204,7 +227,7 @@ public class UserService implements BaseLdapNameAware {
 		User existingUser = findOneByUsername(user.getUsername());
 		LdapName originalId = (LdapName) (existingUser.getId());
 
-		LdapName oldMemberDn = toAbsoluteDn(originalId);
+	//	LdapName oldMemberDn = toAbsoluteDn(originalId);
 		List<String> groups = groupRepoImpl.getUserGroups(user);
 
 		userRepo.delete(originalId);
@@ -212,7 +235,7 @@ public class UserService implements BaseLdapNameAware {
 		for (String group : groups) {
 			// groupRepoImpl.removeMemberFromGroup(group, existingUser);
 			Group g = groupRepo.findByName(group);
-			g.removeMember(oldMemberDn);
+			g.removeMember(user.getUsername().toString());
 
 			groupRepo.save(g);
 		}
@@ -270,27 +293,40 @@ public class UserService implements BaseLdapNameAware {
 	 */
 	private User updateUserAd(LdapName originalId, User existingUser, User user) {
 		
-		LdapName oldMemberDn = toAbsoluteDn(originalId);
+		
+	//	LdapName oldMemberDn = toAbsoluteDn(existingUser.getUsername());
 		List<String> groups = groupRepoImpl.getUserGroups(existingUser);
 
+		if(user.getId() != null){
+			Name id= null;
+			user.setId(id);
+			user.setGroups(groups);
+		}
+	    originalId = (LdapName) (existingUser.getId());
+
+	//	LdapName oldMemberDn = toAbsoluteDn(originalId);
+
 		userRepo.delete(originalId);
+
 
 		for (String group : groups) {
 			// groupRepoImpl.removeMemberFromGroup(group, existingUser);
 			Group g = groupRepo.findByName(group);
-			g.removeMember(oldMemberDn);
+			g.removeMember(existingUser.getUsername().toString());
 
 			groupRepo.save(g);
 		}
 
 		List<String> userGroups = user.getGroups();
 		user.setGroups(null);
+		user.setName(user.getFullName());
+
 		User savedUser = userRepo.save(user);
-		LdapName newMemberDn = toAbsoluteDn(savedUser.getId());
+	//	LdapName newMemberDn = toAbsoluteDn(savedUser.getUsername());
 
 		for (String group : userGroups) {
 			Group g = groupRepo.findByName(group);
-			g.addMember(newMemberDn);
+			g.addMember(savedUser.getUsername().toString());
 			groupRepo.save(g);
 
 		}
@@ -299,8 +335,8 @@ public class UserService implements BaseLdapNameAware {
 
 	private void updateGroupReferences(Collection<Group> groups, Name originalId, Name newId) {
 		for (Group group : groups) {
-			group.removeMember(originalId);
-			group.addMember(newId);
+//			group.removeMember(originalId);
+//			group.addMember(newId);
 
 			groupRepo.save(group);
 		}
@@ -312,5 +348,9 @@ public class UserService implements BaseLdapNameAware {
 
 	public User findOneByUsername(String username) {
 		return userRepo.findOneByUsername(username);
+	}
+	
+	public User findOneByUsername(String username, String pass) {
+		return userRepo.findOneByUsernameAndUserPassword(username, pass);
 	}
 }

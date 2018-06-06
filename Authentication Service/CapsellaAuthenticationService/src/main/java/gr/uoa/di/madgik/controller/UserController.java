@@ -1,6 +1,10 @@
-package gr.uoa.di.madgik.controller;
+ package gr.uoa.di.madgik.controller;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -24,6 +28,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import gr.uoa.di.madgik.config.Hash;
 import gr.uoa.di.madgik.config.Token;
 import gr.uoa.di.madgik.model.ClientIds;
 import gr.uoa.di.madgik.model.User;
@@ -153,8 +158,18 @@ public class UserController {
 			return new ResponseEntity<User>( HttpStatus.CONFLICT);
 		}
 		
-		String generatedSecuredPasswordHash = BCrypt.hashpw(user.getUserPassword(), BCrypt.gensalt(12));
-		user.setUserPassword(generatedSecuredPasswordHash);
+		String generatedSecuredPasswordHash;
+		try {
+			generatedSecuredPasswordHash = Hash.hashMD5Password(user.getUserPassword());
+			user.setUserPassword(generatedSecuredPasswordHash);
+
+		} catch (NoSuchAlgorithmException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (UnsupportedEncodingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} /// BCrypt.hashpw(user.getUserPassword(), BCrypt.gensalt(12));
 		userDAO.insertUser(user, user.getGroups());
 		return new ResponseEntity<User>(user, HttpStatus.CREATED);
 	}
@@ -205,9 +220,12 @@ public class UserController {
 	
 		if(user != null)
 		{
-			String p = user.getUserPasswordASCII();
-			if (BCrypt.checkpw(password, user.getUserPasswordASCII())) {
-				
+			//String p = user.getUserPasswordASCII();
+			
+
+//			
+			if ( groupRepoImpl.authenticate(username, password)) {
+	//		if ( hashedPass.equals(user.getUserPasswordASCII())) {
 				user.getRoles(groupRepo, groupRepoImpl, groupService);
 //				token = Jwts.builder().setSubject(username).claim("roles", user.getGroups()).setIssuedAt(new Date())
 //						.signWith(SignatureAlgorithm.HS256, "secretkey").compact();
@@ -223,6 +241,11 @@ public class UserController {
 				tokenMap.put("token", null);
 				return new ResponseEntity<Map<String, Object>>(tokenMap, HttpStatus.UNAUTHORIZED);
 			}
+//			} catch (NoSuchAlgorithmException e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+//				return new ResponseEntity<Map<String, Object>>(tokenMap, HttpStatus.INTERNAL_SERVER_ERROR);
+//			}  
 		}
 		else
 		{
@@ -232,5 +255,41 @@ public class UserController {
 	
 
 	}
+
+	@RequestMapping(value = "/changePassword", method = RequestMethod.POST)
+	@ResponseBody
+	public ResponseEntity<?> changePassword(@RequestParam String username, @RequestParam String password, @RequestParam String newPassword
+	) throws IOException {
+		String token = null;
+		User user = ldapUserService.findOneByUsername(username);
+		Map<String, Object> tokenMap = new HashMap<String, Object>();
+
+		if(user != null)
+		{
+
+			if ( groupRepoImpl.authenticate(username, password)) {
+
+				user.setNewPassword(newPassword);
+				User user1 = ldapUserService.updateUser(user);
+				return new ResponseEntity<User>(user1, HttpStatus.OK);
+			}
+			else{
+				tokenMap.put("token", null);
+				return new ResponseEntity<Map<String, Object>>(tokenMap, HttpStatus.NOT_FOUND);
+
+			}
+
+		}
+		else
+		{
+			tokenMap.put("token", null);
+			return new ResponseEntity<Map<String, Object>>(tokenMap, HttpStatus.NOT_FOUND);
+		}
+
+
+	}
+	
+	
+	
 
 }

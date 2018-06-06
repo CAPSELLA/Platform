@@ -1,7 +1,12 @@
 package gr.uoa.di.madgik.controller;
 
+import java.io.UnsupportedEncodingException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.List;
 
+import org.jasypt.contrib.org.apache.commons.codec_1_3.binary.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,12 +16,14 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import gr.uoa.di.madgik.config.Hash;
 import gr.uoa.di.madgik.model.Group;
 import gr.uoa.di.madgik.model.User;
 import gr.uoa.di.madgik.repo.GroupRepo;
@@ -55,8 +62,9 @@ public class AdminController {
 		
 		
 		Group group = groupDAO.createGroup(groupName, groupRights);
-		Group g = ldapUserService.createGroup(group);
-		return new ResponseEntity<Group>(g, HttpStatus.CREATED);
+	//	Group g = ldapUserService.createGroup(group);
+		groupRepoImpl.create(group);
+		return new ResponseEntity<Group>(group, HttpStatus.CREATED);
 	}
 	
 	@PreAuthorize("hasRole('ROLE_ADMIN')")
@@ -82,7 +90,16 @@ public class AdminController {
 	@RequestMapping(value = "/registeredUsers", method = RequestMethod.GET)
 	@ResponseBody
 	public ResponseEntity<List<User>> registeredUsers() {
-		List<User> users = ldapUserService.findAll();
+		List<User> users =   new ArrayList<>(); //ldapUserService.findAll();
+		List<String> userss = groupRepoImpl.getAllUsers();
+		
+		for(String s : userss)
+		{
+			User u = ldapUserService.findOneByUsername(s);
+			if(u != null)
+				users.add(u);
+		}
+		
 		for(User u: users)
 		{
 			u.setNewUsername(u.getUsername());
@@ -159,8 +176,17 @@ public class AdminController {
 		if (ldapUserService.findOneByUsername(user.getUsername()) != null) {
 			throw new RuntimeException("Username already exist");
 		}
-		String generatedSecuredPasswordHash = BCrypt.hashpw(user.getUserPassword(), BCrypt.gensalt(12));
-		user.setUserPassword(generatedSecuredPasswordHash);
+		String generatedSecuredPasswordHash;
+		try {
+			generatedSecuredPasswordHash = Hash.hashMD5Password(user.getUserPassword());
+			user.setUserPassword(generatedSecuredPasswordHash);
+		} catch (NoSuchAlgorithmException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (UnsupportedEncodingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		userDAO.insertUser(user, user.getGroups());
 		user = userDAO.getUserForRegistration(user.getUsername());
 		ldapUserService.createUser(user);
@@ -176,5 +202,99 @@ public class AdminController {
 		return new ResponseEntity<User>(HttpStatus.OK);
 
 	}
+	
+	
+	
+	@RequestMapping(value = "/admin/users", method = RequestMethod.POST)
+	@ResponseBody
+	public ResponseEntity<User> registerAppUser(@RequestParam String name, @RequestParam String username, @RequestParam String password, @RequestHeader("Authorization") String token) {
+	    String tokenValue = token.substring(7);
+	    
+	    User user = new User();
+	    List<String> groups = new ArrayList<>() ;
+	    
+	    
+		if (ldapUserService.findOneByUsername(username) != null) {
+			throw new RuntimeException("Username already exist");
+		}
+		if(userDAO.getGeneratedTokenGroups(tokenValue) != null)
+		{
+			groups = userDAO.getGeneratedTokenGroups(tokenValue);
+			System.out.println("the size of groups:"+groups.size());
+			
+		}
+		
+		String generatedSecuredPasswordHash;
+		try {
+			generatedSecuredPasswordHash = Hash.hashMD5Password(password);
+			user.setUserPassword(generatedSecuredPasswordHash);
+
+		} catch (NoSuchAlgorithmException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (UnsupportedEncodingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}  //  BCrypt.hashpw(password, BCrypt.gensalt(12));
+		user.setUsername(username);
+		user.setGroups(groups);
+		user.setFullName(name);
+		user.setLastName(name);
+	
+		userDAO.insertUser(user, user.getGroups());
+		user = userDAO.getUserForRegistration(username);
+		userDAO.deleteUser(user.getUidNumber());
+
+		ldapUserService.createUser(user);
+		return new ResponseEntity<User>(user, HttpStatus.CREATED);
+	}
+
+	@RequestMapping(value = "/admin/user", method = RequestMethod.POST)
+	@ResponseBody
+	public ResponseEntity<User> registerOneUser(@RequestParam String name, @RequestParam String username, @RequestParam String password) {
+	    
+	    User user = new User();
+	    List<String> groups = new ArrayList<>() ;
+	    
+	    
+		if (ldapUserService.findOneByUsername(username) != null) {
+			throw new RuntimeException("Username already exist");
+		}
+//		if(userDAO.getGeneratedTokenGroups(tokenValue) != null)
+//		{
+//			groups = userDAO.getGeneratedTokenGroups(tokenValue);
+//			System.out.println("the size of groups:"+groups.size());
+//			
+//		}
+		
+	//	String generatedSecuredPasswordHash = BCrypt.hashpw(password, BCrypt.gensalt(12));
+		
+		String generatedSecuredPasswordHash;
+		try {
+			generatedSecuredPasswordHash = Hash.hashMD5Password(password);
+			user.setUserPassword(generatedSecuredPasswordHash);
+
+		} catch (NoSuchAlgorithmException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (UnsupportedEncodingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		user.setUsername(username);
+		user.setFullName(name);
+		user.setLastName(name);
+
+	
+		userDAO.insertUser(user, user.getGroups());
+		user = userDAO.getUserForRegistration(username);
+		userDAO.deleteUser(user.getUidNumber());
+		user.setName(user.getUsername());
+
+		ldapUserService.createUser(user);
+		return new ResponseEntity<User>(user, HttpStatus.CREATED);
+	}
+	
+	
 
 }

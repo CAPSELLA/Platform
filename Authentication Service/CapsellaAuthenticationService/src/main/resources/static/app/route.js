@@ -25,7 +25,7 @@ angular.module('CapsellaApp').config(function($stateProvider, $urlRouterProvider
 		parent : 'nav',
 		url : '/users',
 		data : {
-			role : 'ADMIN'
+			role : 'admin'
 		},
 		views : {
 			'content@' : {
@@ -37,7 +37,7 @@ angular.module('CapsellaApp').config(function($stateProvider, $urlRouterProvider
 		parent : 'nav',
 		url : '/registeredUsers',
 		data : {
-			role : 'ADMIN'
+			role : 'admin'
 		},
 		views : {
 			'content@' : {
@@ -49,7 +49,7 @@ angular.module('CapsellaApp').config(function($stateProvider, $urlRouterProvider
 		parent : 'nav',
 		url : '/groups',
 		data : {
-			role : 'ADMIN'
+			role : 'admin'
 		},
 		views : {
 			'content@' : {

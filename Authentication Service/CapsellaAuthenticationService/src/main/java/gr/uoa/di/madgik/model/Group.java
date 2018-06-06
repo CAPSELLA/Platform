@@ -19,7 +19,7 @@ import gr.uoa.di.madgik.repo.GroupRepo;
 import gr.uoa.di.madgik.repo.GroupRepoImpl;
 
 
-@Entry(objectClasses = {"posixGroup", "top"}, base = "ou=groups")
+@Entry(objectClasses = {"posixGroup", "top"}, base = "ou=capsella")
 public final class Group implements Serializable {
     /**
 	 * 
@@ -36,6 +36,9 @@ public final class Group implements Serializable {
 
     @Attribute(name = "description")
     private String description;
+    
+    @Attribute(name = "cn")
+	private String fullName;
 
     
     @Attribute(name = "gidNumber")
@@ -55,6 +58,16 @@ public final class Group implements Serializable {
 	
 	
 
+	
+	
+	public String getFullName() {
+		return fullName;
+	}
+
+	public void setFullName(String fullName) {
+		this.fullName = fullName;
+	}
+
 	public String getNewName() {
 		return newName;
 	}
@@ -72,7 +85,7 @@ public final class Group implements Serializable {
 	}
 
 	@Attribute(name = "memberUid")
-    private Set<Name> members = new HashSet<Name>();
+    private Set<String> members = new HashSet<String>();
 
     public String getDescription() {
         return description;
@@ -82,15 +95,15 @@ public final class Group implements Serializable {
         this.description = description;
     }
 
-    public Set<Name> getMembers() {
+    public Set<String> getMembers() {
         return  members;
     }
 
-    public void addMember(Name newMember) {
+    public void addMember(String newMember) {
         members.add(newMember);
     }
 
-    public void removeMember(Name member) {
+    public void removeMember(String member) {
         members.remove(member);
     }
 

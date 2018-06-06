@@ -11,6 +11,8 @@ import gr.uoa.di.madgik.model.*;
 public interface UserRepo extends LdapRepository<User> {
 
 	List<User> findByFullNameContains(String name);
-
+	
 	User findOneByUsername(String username);
+
+	User findOneByUsernameAndUserPassword(String username, String userPassword);
 }

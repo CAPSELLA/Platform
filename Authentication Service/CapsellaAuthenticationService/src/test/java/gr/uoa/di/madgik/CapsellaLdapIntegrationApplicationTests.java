@@ -29,7 +29,7 @@ public class CapsellaLdapIntegrationApplicationTests {
 	@Before
 	public void createUser(){
 		User user = new User();
-		user.setFirstName("Kostas");
+	//	user.setFirstName("Kostas");
 		//user.setFullName("Kostantinos kos");
 		user.setId("kostasId");
 		user.setLastName("kos");
