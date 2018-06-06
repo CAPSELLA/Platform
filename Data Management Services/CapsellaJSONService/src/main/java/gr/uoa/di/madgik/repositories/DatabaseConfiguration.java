@@ -30,7 +30,8 @@ public class DatabaseConfiguration extends AbstractMongoConfiguration {
     private String database ;
     @Value("${spring.data.mongodb.password}")
     private String password ;
-    @Bean
+
+    static Mongo mongoDB = null;
     
     public ValidatingMongoEventListener validatingMongoEventListener() {
         return new ValidatingMongoEventListener(validator());
@@ -49,6 +50,22 @@ public class DatabaseConfiguration extends AbstractMongoConfiguration {
 	@Override
 	public Mongo mongo() throws Exception {
 		MongoCredential credential = MongoCredential.createCredential(database, username, password.toCharArray());
-        return new MongoClient(new ServerAddress(host,port), Arrays.asList(credential));
+        mongoDB = new MongoClient(new ServerAddress(host,port), Arrays.asList(credential));
+        return mongoDB;
 	}
+
+	public static Mongo  getMongo(){
+
+        if(mongoDB == null){
+            System.out.println("New mongo connection .............");
+            MongoCredential credential = MongoCredential.createCredential("capsella", "capsella", "c@ps311!@".toCharArray());
+            mongoDB = new MongoClient(new ServerAddress("dl055.madgik.di.uoa.gr",27017), Arrays.asList(credential));
+            return mongoDB;
+        }
+        else {
+            System.out.println("Existed mongo connection .............");
+
+            return mongoDB;
+        }
+    }
 }

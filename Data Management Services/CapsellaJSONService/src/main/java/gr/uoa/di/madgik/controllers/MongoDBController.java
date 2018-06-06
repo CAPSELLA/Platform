@@ -12,6 +12,7 @@ import org.apache.commons.io.FileUtils;
 import org.bson.Document;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.json.JSONTokener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.repository.query.Param;
@@ -62,9 +63,20 @@ public class MongoDBController {
 	    convFile.createNewFile(); 
 	    FileOutputStream fos = new FileOutputStream(convFile); 
 	    fos.write(uploadfile.getBytes());
-	    fos.close(); 
+	    fos.close();
+		JSONArray jArray = null;
 		String str = FileUtils.readFileToString(convFile, "UTF-8");
-		JSONArray jArray =new JSONArray(str);
+		Object object = new JSONTokener(str).nextValue();
+		if (object instanceof JSONObject) {
+			//you have an object
+			JSONObject jsonObject = new JSONObject(str);
+			jArray = new JSONArray();
+			jArray.put(jsonObject);
+		}
+		else if (object instanceof JSONArray) {
+			jArray =new JSONArray(str);
+		}
+
 		Timestamp timestamp = new Timestamp(System.currentTimeMillis());
 		
 
@@ -81,9 +93,9 @@ public class MongoDBController {
 
 		}
 	
-		databaseConfiguration.mongo().getDB(database).getCollection(collection).insert(documents);
+		databaseConfiguration.getMongo().getDB(database).getCollection(collection).insert(documents);
 		convFile.delete();
-		
+
 		responseMap.put("mongo-service", serviceUrl + uuid + "?collection=" + collection);
 
 		return new ResponseEntity<Map<String, String>>(responseMap, HttpStatus.OK);
@@ -95,8 +107,8 @@ public class MongoDBController {
 		
 		BasicDBObject query = new BasicDBObject();
 		query.put("uuid", uuid);
-		databaseConfiguration.mongo().getDB(database).getCollection(collection).remove(query);
-		
+		databaseConfiguration.getMongo().getDB(database).getCollection(collection).remove(query);
+
 		return new ResponseEntity<>(HttpStatus.OK);
 
 
@@ -118,7 +130,7 @@ public class MongoDBController {
 		
 		BasicDBObject query = new BasicDBObject();
 		query.put("uuid", id);
-		DBCursor find = databaseConfiguration.mongo().getDB(database).getCollection(collection).find(query);
+		DBCursor find = databaseConfiguration.getMongo().getDB(database).getCollection(collection).find(query);
 		
 		StringBuilder stringBuilder = new StringBuilder();
 		if (find.hasNext())
@@ -141,7 +153,7 @@ public class MongoDBController {
 		{
 			return new ResponseEntity<>(HttpStatus.NOT_FOUND);
 		}
-		
+
 		return new ResponseEntity<>(stringBuilder.toString(), HttpStatus.OK);
 
 
