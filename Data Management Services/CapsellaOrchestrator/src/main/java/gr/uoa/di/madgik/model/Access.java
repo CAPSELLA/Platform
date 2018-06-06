@@ -3,21 +3,22 @@ package gr.uoa.di.madgik.model;
 public enum Access {
 	
 	PUBLIC("public"),
+	PROTECTED("protected"),
 	PRIVATE("private");
 	
 	public final String access;
 	
 	 public static Access getValue(String type) 
 	 {
-		 
 		 switch(type)
 		 {
-			 case "public":
+		 	case "public":
 				 return PUBLIC;
-			 case "private":
+			case "protected":
+				 return PROTECTED;
+			case "private":
 				 return PRIVATE;
-			
-			 default:
+			default:
 				 return null;
 		 }
 	 }
@@ -29,6 +30,8 @@ public enum Access {
 	    		
 	    		case PUBLIC:
 	    			return "public";
+				case PROTECTED:
+					return "protected";
 	    		case PRIVATE:
 	    			return "private";
 	    		

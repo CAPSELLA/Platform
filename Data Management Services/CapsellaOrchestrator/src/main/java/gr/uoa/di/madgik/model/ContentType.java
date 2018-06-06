@@ -5,7 +5,8 @@ public enum ContentType {
 	CSV("csv"),
 	JSON("json"),
 	SHAPEFILE("shapefile"),
-	RELATIONAL("relational");
+	RELATIONAL("relational"),
+	IMAGE_FILE("image");
 	
 	public final String contentType;
 	
@@ -22,6 +23,8 @@ public enum ContentType {
 				 return SHAPEFILE;
 			 case "relational":
 				 return RELATIONAL;
+			 case "image":
+				 return IMAGE_FILE;
 			 default:
 				 return null;
 		 }
@@ -40,6 +43,8 @@ public enum ContentType {
 	    			return "shapefile";
 	    		case RELATIONAL:
 	    			return "relational";
+	    		case IMAGE_FILE:
+	    			return "image";
 	    	}
 	       return "";
 	    }

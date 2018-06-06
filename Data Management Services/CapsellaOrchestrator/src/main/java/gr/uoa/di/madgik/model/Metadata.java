@@ -48,7 +48,9 @@ public class Metadata implements Serializable {
 	
 	@Column(name="content_type")
 	private String contentType;
-	
+
+	@Column(name="dataset_group")
+	private String datasetGroup;
 
 	@Column(name="dataset_name")
 	private String datasetName;
@@ -299,6 +301,16 @@ public class Metadata implements Serializable {
 
 	public void setEndpoints(List<Endpoint> endpoints) {
 		this.endpoints = endpoints;
+	}
+
+
+	public String getDataset_group() {
+		return datasetGroup;
+	}
+
+
+	public void setDataset_group(String dataset_group) {
+		this.datasetGroup = dataset_group;
 	}
 
 

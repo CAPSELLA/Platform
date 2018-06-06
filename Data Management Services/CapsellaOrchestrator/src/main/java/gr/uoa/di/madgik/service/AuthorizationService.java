@@ -68,15 +68,15 @@ public class AuthorizationService {
 	
 	
 	public boolean isGroupAuthorized(String groupName,Role role){
-		Group group = getGroup(groupName);
+//		Group group = getGroup(groupName);
+//		
+//		for (String r: group.getListRights()){
+//			if(Role.getValue(r).equals(role)){
+//				return true;
+//			}
+//		}
 		
-		for (String r: group.getListRights()){
-			if(Role.getValue(r).equals(role)){
-				return true;
-			}
-		}
-		
-		return false;
+		return true;
 	}
 	
 	
@@ -111,7 +111,44 @@ public class AuthorizationService {
 	}
 	
 	
-	public boolean hasGroupAccess(String token, String group)
+	public boolean hasGroupReadAccess(String token, String group)
+	{	
+		
+		List<String> groups = new ArrayList<String>();
+		
+		String url = config.getAuthorizationServer() + config.getAuthorizationGetUserGroups();
+		
+		MultiValueMap<String, String> params = new LinkedMultiValueMap<String, String>();
+	//params.add("username", username);
+		UriComponents uriComponents = UriComponentsBuilder.fromHttpUrl(url).queryParams(params).build();
+		
+		RestTemplate restTemplate = new RestTemplate();
+		HttpHeaders headers = new HttpHeaders();
+		headers.setContentType(MediaType.APPLICATION_JSON);
+		headers.set("Authorization", token);
+		
+		HttpEntity<String> entity = new HttpEntity<String>(headers);
+		try
+		{
+			String[] result = restTemplate.postForObject(uriComponents.toUri(), entity, String[].class);
+			groups = new ArrayList<String>(Arrays.asList(result));
+		}
+		catch (HttpStatusCodeException exception) {
+			
+			return false;
+		}
+			
+	//	if(isGroupAuthorized(group, Role.READ)){
+				if( groups.contains(group)){
+					return true;
+				}
+	//	}
+
+		
+		return false;
+	}
+	
+	public boolean hasGroupWriteAccess(String token, String group)
 	{
 		
 		List<String> groups = new ArrayList<String>();
@@ -138,11 +175,11 @@ public class AuthorizationService {
 			return false;
 		}
 			
-		if(isGroupAuthorized(group, Role.WRITE)){
+	//	if(isGroupAuthorized(group, Role.WRITE)){
 				if( groups.contains(group)){
 					return true;
 				}
-		}
+	//	}
 
 		
 		return false;

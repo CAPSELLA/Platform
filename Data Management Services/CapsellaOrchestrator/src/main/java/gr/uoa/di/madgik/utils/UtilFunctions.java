@@ -4,12 +4,19 @@ import java.io.File;
 import java.sql.Timestamp;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import org.apache.commons.io.FilenameUtils;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.springframework.beans.BeanUtils;
+
+import com.google.common.collect.Multiset.Entry;
 
 import gr.uoa.di.madgik.model.Access;
 import gr.uoa.di.madgik.model.ContentType;
@@ -64,6 +71,9 @@ public class UtilFunctions {
 			}
 			else  if(entry.getKey().equals("source")){
 				metadata.setSource(entry.getValue());
+			}
+			else  if(entry.getKey().equals("access")){
+				metadata.setAccess(entry.getValue());
 			}
 			
 
@@ -133,4 +143,30 @@ public class UtilFunctions {
 //	    	   		 }		 
 //		        }
 //	}
+	
+	public static JSONObject mergeJSONObjects(JSONObject json1, JSONObject json2) {
+		JSONObject mergedJSON = new JSONObject();
+		try {
+			mergedJSON = new JSONObject(json1, JSONObject.getNames(json1));
+			for (String crunchifyKey : JSONObject.getNames(json2)) {
+				mergedJSON.put(crunchifyKey, json2.get(crunchifyKey));
+			}
+ 
+		} catch (JSONException e) {
+			throw new RuntimeException("JSON Exception" + e);
+		}
+		return mergedJSON;
+	}
+	
+	public static JSONArray concatArray(List<JSONArray>  arrs)
+	        throws JSONException {
+	    JSONArray result = new JSONArray();
+	    for (JSONArray arr : arrs) {
+	        for (int i = 0; i < arr.length(); i++) {
+	            result.put(arr.get(i));
+	        }
+	    }
+	    return result;
+	}
+	
 }

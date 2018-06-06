@@ -19,6 +19,8 @@ public interface MetadataRepository extends CrudRepository<Metadata, String>{
 	
 	Metadata findByUuid(String uuid);
 	
+	List<Metadata> findByDatasetGroup(String dataset_group);
+
 	List<Metadata> findByUsernameAndStatus(String username, String status);
 	
 	List<Metadata> findByOwnerGroupAndStatus(String owner_group, String status);

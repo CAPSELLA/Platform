@@ -58,6 +58,11 @@ public class MetadataService {
 
 	}
 	
+	public List<Metadata> findByDatasetGroup(String datasetGroup){
+		return repository.findByDatasetGroup(datasetGroup);
+
+	}
+	
 	public List<Metadata> findByUsername(String username, String status ){
 		return repository.findByUsernameAndStatus(username, status);
 

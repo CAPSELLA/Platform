@@ -118,6 +118,20 @@ public class ScheduledTasks {
 				
 					
 				}
+				else if(ContentType.getValue(m.getContentType()).equals(ContentType.IMAGE_FILE))
+				{
+					
+					MultiValueMap<String, String> postParams = new LinkedMultiValueMap<>();
+					postParams.add("uuid", m.getUuid().toString());
+					RestTemplate restTemplate = new RestTemplate();
+					String foo = restTemplate.postForObject(
+							config.getImageServer() + config.getImageServer_deleteImageFile(),
+							postParams, String.class);
+					
+					
+	
+					
+				}
 
 				
 				System.out.println("Delete dataset with uuid: " + m.getUuid());

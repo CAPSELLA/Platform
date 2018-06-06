@@ -12,6 +12,7 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
+import gr.uoa.di.madgik.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,12 +47,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import gr.uoa.di.madgik.config.AppConfig;
 import gr.uoa.di.madgik.config.AppConfig.ApiConfigTemplate;
-import gr.uoa.di.madgik.model.ContentType;
-import gr.uoa.di.madgik.model.DatasetStatus;
-import gr.uoa.di.madgik.model.Endpoint;
-import gr.uoa.di.madgik.model.EndpointType;
-import gr.uoa.di.madgik.model.Metadata;
-import gr.uoa.di.madgik.model.Role;
 import gr.uoa.di.madgik.repository.GroupRepository;
 import gr.uoa.di.madgik.repository.MetadataRepository;
 import gr.uoa.di.madgik.service.AuthorizationService;
@@ -151,7 +146,7 @@ public class GlobalController {
 				metadata.setUsername(response.getBody().toString());
 			}
 			
-			if(!authorizationService.hasGroupAccess(token, group))
+			if(!authorizationService.hasGroupWriteAccess(token, group))
 				return new ResponseEntity<String>( HttpStatus.UNAUTHORIZED);
 			
 		
@@ -251,17 +246,28 @@ public class GlobalController {
 
 		
 		ResponseEntity<?> res = authorizeByUsername(req, token);
-		
+		String username = (String) res.getBody();
+
+
 		if(res.getStatusCode().equals(HttpStatus.UNAUTHORIZED))
 		{
 			return new ResponseEntity<String>( HttpStatus.UNAUTHORIZED);
 		}
-		
-		if(!authorizationService.hasGroupAccess(token, group))
-			return new ResponseEntity<String>( HttpStatus.UNAUTHORIZED);
+		Metadata metadata = metadataService.findByUUID(uuid);
+		if(metadata != null) {
+
+			if (metadata.getAccess().equals(Access.PRIVATE.toString()) && !metadata.getUsername().equals(username))
+				return new ResponseEntity<String>(HttpStatus.UNAUTHORIZED);
+
+
+			if(!metadata.getAccess().equals(Access.PUBLIC.toString())) {
+				if (!authorizationService.hasGroupWriteAccess(token, group))
+					return new ResponseEntity<String>(HttpStatus.UNAUTHORIZED);
+			}
+		}
+
 	
 		
-		Metadata metadata = metadataService.findByUUID(uuid);
 		if(metadata != null)
 		{
 			System.out.println("The content type of the file is:"+uploadfile.getContentType());
@@ -452,6 +458,35 @@ public class GlobalController {
 					return new ResponseEntity<String>("Cannot create database!", HttpStatus.NOT_FOUND);
 				}
 			}
+			else if(ContentType.getValue(metadata.getContentType()).equals(ContentType.IMAGE_FILE))
+			{
+				String path = tempPath; // System.getProperty("user.dir");		//for local testing
+		    	HttpHeaders headers = new HttpHeaders();
+
+				MultiValueMap<String, Object> multipartMap = new LinkedMultiValueMap<String, Object>();
+				File convFile = new File(path + File.separator + uploadfile.getOriginalFilename());
+				try {
+					uploadfile.transferTo(convFile);
+					multipartMap.add("uploadfile", new FileSystemResource(convFile.getPath()));
+					multipartMap.add("uuid", uuid.toString());
+					headers = new HttpHeaders();
+					headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+					HttpEntity<Object> request = new HttpEntity<Object>(multipartMap, headers);
+				    RestTemplate restTemplate = new RestTemplate();
+					String imagePath = restTemplate.postForObject(
+							config.getImageServer() + config.getImageServer_uploadImageFile(),
+							request, String.class);
+					convFile.delete();
+					metadataService.insertEndpoint(metadata, imagePath,EndpointType.SERVICE.toString());
+					metadata.setStatus(DatasetStatus.ACTIVE.toString());
+					Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+					metadata.setLastUpdated(timestamp);
+					metadataService.insertMetadata(metadata);
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+				return new ResponseEntity<String>(HttpStatus.OK);
+			}
 			
 		}
 		
@@ -463,8 +498,7 @@ public class GlobalController {
 		  @ApiImplicitParam(name = "Authorization", value = "Authorization token", 
               required = true, dataType = "string", paramType = "header"),
 		  @ApiImplicitParam(name = "Group", value = "Authorization token", 
-      required = true, dataType = "string", paramType = "header"),		
-	    @ApiImplicitParam(name = "uuid", value = "dataset's uuid", required = true, dataType = "string", paramType = "query"),
+      required = true, dataType = "string", paramType = "header"),
 	   
 	  })
 	@RequestMapping(value = "/datasets/{uuid}", method = RequestMethod.DELETE)
@@ -474,18 +508,26 @@ public class GlobalController {
 		
 		
 		ResponseEntity<?> res = authorizeByUsername(request, token);
-		
+		String username = (String) res.getBody();
+
 		if(res.getStatusCode().equals(HttpStatus.UNAUTHORIZED))
 		{
 			return new ResponseEntity<String>( HttpStatus.UNAUTHORIZED);
 		}
-		if(!authorizationService.hasGroupAccess(token, group))
-			return new ResponseEntity<String>( HttpStatus.UNAUTHORIZED);
-		
 		Metadata metadata = metadataService.findByUUID(uuid);
+		if(metadata != null) {
+
+			if (metadata.getAccess().equals(Access.PRIVATE.toString()) && !metadata.getUsername().equals(username))
+				return new ResponseEntity<String>(HttpStatus.UNAUTHORIZED);
+
+
+			if(!metadata.getAccess().equals(Access.PUBLIC.toString())) {
+				if (!authorizationService.hasGroupWriteAccess(token, group))
+					return new ResponseEntity<String>(HttpStatus.UNAUTHORIZED);
+			}
+		}
 		if(metadata != null)
 		{
-			
 				metadata.setStatus(DatasetStatus.INACTIVE.toString());
 				Timestamp timestamp = new Timestamp(System.currentTimeMillis());
 				metadata.setLastUpdated(timestamp);
@@ -579,13 +621,25 @@ public class GlobalController {
 		{
 			return new ResponseEntity<String>( HttpStatus.UNAUTHORIZED);
 		}
-		if(!authorizationService.hasGroupAccess(token, group))
-			return new ResponseEntity<String>( HttpStatus.UNAUTHORIZED);
-		
+
 		Metadata metadata = metadataService.findByUUID(uuid);
-		metadata.setStatus(DatasetStatus.ONUPDATE.toString());
-		metadataService.insertMetadata(metadata);
-		
+		if(metadata != null) {
+			String username = (String) res.getBody();
+
+			if (metadata.getAccess().equals(Access.PRIVATE.toString())) {
+				if (!metadata.getUsername().equals(username))
+					return new ResponseEntity<String>(HttpStatus.UNAUTHORIZED);
+			}
+
+
+			if (!metadata.getAccess().equals(Access.PUBLIC.toString())) {
+				if (!authorizationService.hasGroupWriteAccess(token, group))
+					return new ResponseEntity<String>(HttpStatus.UNAUTHORIZED);
+			}
+
+			metadata.setStatus(DatasetStatus.ONUPDATE.toString());
+			metadataService.insertMetadata(metadata);
+		}
 		Metadata newMetadata = null;
 		if(metadataParam != null){
 			
@@ -835,6 +889,50 @@ public class GlobalController {
 						e.printStackTrace();
 					}
 					return new ResponseEntity<String>(HttpStatus.OK);
+				
+			}
+			else if(ContentType.getValue(metadata.getContentType()).equals(ContentType.IMAGE_FILE))
+			{
+				
+				String path = tempPath;
+				MultiValueMap<String, Object> multipartMap = new LinkedMultiValueMap<String, Object>();
+				File convFile = new File(path + File.separator + uploadfile.getOriginalFilename());
+				String imagePath = null;
+				try {
+					uploadfile.transferTo(convFile);
+					multipartMap.add("uploadfile", new FileSystemResource(convFile.getPath()));
+					multipartMap.add("uuid", uuid.toString());
+					HttpHeaders headers = new HttpHeaders();
+					headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+					HttpEntity<Object> request = new HttpEntity<Object>(multipartMap, headers);
+					RestTemplate restTemplate = new RestTemplate();
+					imagePath = restTemplate.postForObject(
+							config.getImageServer() + config.getImageServer_uploadImageFile(),
+							request, String.class);
+					convFile.delete();
+					
+					
+				} catch (IOException e) {
+					
+					metadata.setStatus(DatasetStatus.ACTIVE.toString());
+					metadataService.insertMetadata(metadata);
+					metadataService.insertEndpoint(metadata, imagePath,EndpointType.SERVICE.toString());
+
+					e.printStackTrace();
+				}
+				if( newMetadata != null){
+					newMetadata.setStatus(DatasetStatus.ACTIVE.toString());
+					metadataService.insertMetadata(newMetadata);
+					metadataService.insertEndpoint(newMetadata, imagePath,EndpointType.SERVICE.toString());
+
+				}
+				else{
+					metadata.setStatus(DatasetStatus.ACTIVE.toString());
+					metadataService.insertMetadata(metadata);
+					metadataService.insertEndpoint(metadata, imagePath,EndpointType.SERVICE.toString());
+
+				}
+				return new ResponseEntity<String>(HttpStatus.OK);
 				
 			}
 		}
